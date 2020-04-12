@@ -21,10 +21,35 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   TextEditingController todoTaskController = TextEditingController();
-  List _todoList = [
-    {'title': 'xxx', 'ok': true},
-    {'title': 'sadasdsd', 'ok': false},
-  ];
+  List _todoList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _readData().then((data) {
+      _todoList = json.decode(data);
+    });
+  }
+
+  void atualizaItem(index, value) {
+    setState(() {
+      _todoList[index]['ok'] = value;
+      _saveFile();
+    });
+  }
+
+  void onAddButtonClicked() {
+    if (todoTaskController.text.isNotEmpty) {
+      Map item = Map();
+      item['title'] = todoTaskController.text;
+      item['ok'] = false;
+      todoTaskController.clear();
+      setState(() {
+        _todoList.add(item);
+      });
+      _saveFile();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +63,7 @@ class _HomeState extends State<Home> {
               children: <Widget>[
                 Expanded(
                   child: TextField(
+                      autofocus: true,
                       controller: todoTaskController,
                       decoration: InputDecoration(
                         labelText: 'New task',
@@ -46,7 +72,7 @@ class _HomeState extends State<Home> {
                 RaisedButton(
                   textColor: Colors.white,
                   child: Icon(Icons.add),
-                  onPressed: () {},
+                  onPressed: onAddButtonClicked,
                 )
               ],
             ),
@@ -56,33 +82,47 @@ class _HomeState extends State<Home> {
                 padding: EdgeInsets.only(top: 10, left: 1, right: 1),
                 itemCount: _todoList.length,
                 itemBuilder: (context, index) {
-                  return CheckboxListTile(
-                      secondary: CircleAvatar(
-                        child: _todoList[index]['ok']
-                            ? Icon(Icons.check)
-                            : Icon(Icons.clear),
-                      ),
-                      title: Text(_todoList[index]['title']),
-                      value: _todoList[index]['ok']);
+                  return buildItem(index);
                 }),
           ),
-          Row(
-            children: <Widget>[
-              IconButton(
-                iconSize: 50,
-                icon: Icon(Icons.check_circle),
-                onPressed: () {},
-              ),
-              Text('xxxxxx'),
-              Checkbox(
-                tristate: true,
-                onChanged: (value) {},
-              ),
-            ],
-          )
         ],
       ),
     );
+  }
+
+  Widget buildItem(int index) {
+    return Dismissible(
+      key: Key(index.toString()),
+      child: CheckboxListTile(
+          onChanged: (value) {
+            atualizaItem(index, value);
+          },
+          secondary: CircleAvatar(
+            child:
+                _todoList[index]['ok'] ? Icon(Icons.check) : Icon(Icons.clear),
+          ),
+          title: Text(_todoList[index]['title']),
+          value: _todoList[index]['ok']),
+      direction: DismissDirection.startToEnd,
+      background: Container(
+          color: Colors.red,
+          child: Align(
+            alignment: Alignment(-.9, 0),
+            child: Icon(
+              Icons.delete,
+              color: Colors.white,
+            ),
+          )),
+    );
+//    return CheckboxListTile(
+//        onChanged: (value) {
+//          atualizaItem(index, value);
+//        },
+//        secondary: CircleAvatar(
+//          child: _todoList[index]['ok'] ? Icon(Icons.check) : Icon(Icons.clear),
+//        ),
+//        title: Text(_todoList[index]['title']),
+//        value: _todoList[index]['ok']);
   }
 
   Future<File> _getFile() async {

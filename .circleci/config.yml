@@ -1,0 +1,26 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: cirrusci/flutter:v1.5.8
+
+    branches:
+      only: master
+
+    steps:
+      - checkout
+
+      - run:
+          name: Atualizando dependencias
+          command: flutter pub get
+
+      - run:
+          name: Run lint
+          command: dartanalyzer --options analysis_options.yaml .
+
+      - run:
+          name: Run the application tests
+          command: flutter test --coverage && genhtml -o coverage coverage/lcov.info
+
+      - store_artifacts:
+          path: coverage

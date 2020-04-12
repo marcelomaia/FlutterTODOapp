@@ -25,6 +25,7 @@ class _HomeState extends State<Home> {
 
   var lastRemovedElement;
   var lastRemovedIndex;
+  bool _is_valid = false;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ class _HomeState extends State<Home> {
       todoTaskController.clear();
       setState(() {
         _todoList.add(item);
+        _is_valid = false;
       });
       _saveFile();
     }
@@ -67,6 +69,11 @@ class _HomeState extends State<Home> {
                 Expanded(
                   child: TextField(
                       autofocus: true,
+                      onChanged: (value) {
+                        setState(() {
+                          _is_valid = value.isNotEmpty;
+                        });
+                      },
                       controller: todoTaskController,
                       decoration: InputDecoration(
                         labelText: 'New task',
@@ -75,7 +82,7 @@ class _HomeState extends State<Home> {
                 RaisedButton(
                   textColor: Colors.white,
                   child: Icon(Icons.add),
-                  onPressed: onAddButtonClicked,
+                  onPressed: _is_valid ? onAddButtonClicked : null,
                 )
               ],
             ),

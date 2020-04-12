@@ -23,6 +23,9 @@ class _HomeState extends State<Home> {
   TextEditingController todoTaskController = TextEditingController();
   List _todoList = [];
 
+  var lastRemovedElement;
+  var lastRemovedIndex;
+
   @override
   void initState() {
     super.initState();
@@ -40,7 +43,7 @@ class _HomeState extends State<Home> {
 
   void onAddButtonClicked() {
     if (todoTaskController.text.isNotEmpty) {
-      Map item = Map();
+      var item = {};
       item['title'] = todoTaskController.text;
       item['ok'] = false;
       todoTaskController.clear();
@@ -82,7 +85,7 @@ class _HomeState extends State<Home> {
                 padding: EdgeInsets.only(top: 10, left: 1, right: 1),
                 itemCount: _todoList.length,
                 itemBuilder: (context, index) {
-                  return buildItem(index);
+                  return buildItem(context, index);
                 }),
           ),
         ],
@@ -90,9 +93,31 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget buildItem(int index) {
+  Widget buildItem(BuildContext context, int index) {
     return Dismissible(
-      key: Key(index.toString()),
+      key: UniqueKey(),
+      onDismissed: (direction) {
+        setState(() {
+          lastRemovedElement = _todoList[index];
+          lastRemovedIndex = index;
+          _todoList.removeAt(index);
+          _saveFile();
+          final snackbar = SnackBar(
+            content: Text("Task ${lastRemovedElement['title']} removed"),
+            duration: Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Desfazer?',
+              onPressed: () {
+                setState(() {
+                  _todoList.insert(lastRemovedIndex, lastRemovedElement);
+                  _saveFile();
+                });
+              },
+            ),
+          );
+          Scaffold.of(context).showSnackBar(snackbar);
+        });
+      },
       child: CheckboxListTile(
           onChanged: (value) {
             atualizaItem(index, value);
@@ -114,15 +139,6 @@ class _HomeState extends State<Home> {
             ),
           )),
     );
-//    return CheckboxListTile(
-//        onChanged: (value) {
-//          atualizaItem(index, value);
-//        },
-//        secondary: CircleAvatar(
-//          child: _todoList[index]['ok'] ? Icon(Icons.check) : Icon(Icons.clear),
-//        ),
-//        title: Text(_todoList[index]['title']),
-//        value: _todoList[index]['ok']);
   }
 
   Future<File> _getFile() async {
@@ -131,7 +147,7 @@ class _HomeState extends State<Home> {
   }
 
   Future<File> _saveFile() async {
-    String data = json.encode(_todoList);
+    var data = json.encode(_todoList);
     final file = await _getFile();
     return file.writeAsString(data);
   }
